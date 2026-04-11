@@ -1,0 +1,33 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+
+<!-- 
+  =============================================================================
+  TestNG Execution Configuration File
+  =============================================================================
+  This XML file is the heart of TestNG test execution. It defines HOW the 
+  tests should be run, including parallelization strategies and thread pools.
+-->
+
+<!-- 
+  <suite>: The root tag representing a test suite.
+  - name: A descriptive name for the test suite (shows up in reports).
+  - parallel="methods": This is the crucial attribute for parallel execution. 
+    It tells TestNG to execute each individual @Test method in its own isolated 
+    Java thread. Because our framework uses a ThreadLocal WebDriverManager, 
+    each of these threads will safely receive its own unique browser instance.
+  - thread-count="2": Limits the maximum number of concurrent threads to 2.
+    If there are 5 @Test methods, 2 will start immediately. As soon as one 
+    finishes, the next one in the queue takes its place.
+-->
+<suite name="Parallel Execution Suite" parallel="methods" thread-count="2">
+    
+    <!-- <test>: Represents a logical grouping of test classes. -->
+    <test name="Parallel Search Tests">
+        
+        <!-- <classes>: Contains a list of Java classes to be executed. -->
+        <classes>
+            <!-- <class>: The fully qualified name (PackageName.ClassName) of the test class. -->
+            <class name="com.framework.tests.ParallelTest"/>
+        </classes>
+    </test>
+</suite>
