@@ -2,13 +2,14 @@ package automation.selenium;
 
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
+import java.io.Serializable;
 
 /**
  * This class demonstrates an Advanced Singleton Design Pattern tailored for 
  * Selenium WebDriver in real-world scenarios, particularly parallel execution.
  * 
  */
-public class WebDriverSingleton {
+public class WebDriverSingleton implements Serializable {
 
     // 1. Thread-safe Singleton Instance using 'volatile'
     // 'volatile' ensures that multiple threads handle the 'instance' variable correctly 
@@ -67,5 +68,13 @@ public class WebDriverSingleton {
             // especially when using Thread Pools (like in TestNG or CI servers).
             driver.remove();
         }
+    }
+
+    /**
+     * 5. Protect against Serialization Attacks
+     * Ensures that deserializing a serialized Singleton doesn't create a new instance.
+     */
+    protected Object readResolve() {
+        return getInstance();
     }
 }

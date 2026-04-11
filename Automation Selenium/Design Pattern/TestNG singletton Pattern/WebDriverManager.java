@@ -2,11 +2,14 @@ package com.framework.core;
 
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
+import java.io.Serializable;
 
 /**
  * Singleton class to manage WebDriver instances safely across multiple threads.
+ * Implements Serializable to demonstrate how to protect Singletons from 
+ * serialization/deserialization attacks.
  */
-public class WebDriverManager {
+public class WebDriverManager implements Serializable {
 
     /**
      * 1. The Singleton Instance
@@ -24,8 +27,12 @@ public class WebDriverManager {
      */
     private ThreadLocal<WebDriver> driver = new ThreadLocal<>();
 
-    // Private constructor prevents any other class from doing 'new WebDriverManager()'
-    private WebDriverManager() {}
+    // Private constructor prevents other classes from doing 'new WebDriverManager()'
+    private WebDriverManager() {
+        if (instance != null) {
+            throw new IllegalStateException("Singleton instance already exists. Reflection attack blocked. Use getInstance() method.");
+        }
+    }
 
     /**
      * 3. Global Access Point with Double-Checked Locking
@@ -74,5 +81,16 @@ public class WebDriverManager {
             // old, "dead" browser references to leak into future tests executed on this thread.
             driver.remove();
         }
+    }
+
+    /**
+     * 5. Protect against Serialization Attacks
+     * During deserialization, Java creates a new instance of the class by default,
+     * bypassing the private constructor and breaking the Singleton pattern.
+     * By implementing readResolve(), we instruct the JVM to return the existing 
+     * instance instead of creating a new one.
+     */
+    protected Object readResolve() {
+        return getInstance();
     }
 }
