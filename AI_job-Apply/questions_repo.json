@@ -1,0 +1,66 @@
+{
+  "questions": [
+    {
+      "question": "What is your current notice period?",
+      "answer": "Immediate",
+      "type": "select",
+      "timestamp": "2026-04-21T16:00:00",
+      "usage_count": 0
+    },
+    {
+      "question": "Are you willing to relocate?",
+      "answer": "Yes",
+      "type": "radio",
+      "timestamp": "2026-04-21T16:00:00",
+      "usage_count": 0
+    },
+    {
+      "question": "Expected Salary Range",
+      "answer": "18-25 Lacs PA",
+      "type": "text",
+      "timestamp": "2026-04-21T16:00:00",
+      "usage_count": 0
+    },
+    {
+      "question": "Years of Experience",
+      "answer": "7",
+      "type": "text",
+      "timestamp": "2026-04-21T16:00:00",
+      "usage_count": 0
+    },
+    {
+      "question": "Current Employment Status",
+      "answer": "Employed",
+      "type": "select",
+      "timestamp": "2026-04-21T16:00:00",
+      "usage_count": 0
+    },
+    {
+      "question": "Primary Skills",
+      "answer": "Java, Selenium, TestNG, API Testing, CI/CD",
+      "type": "text",
+      "timestamp": "2026-04-21T16:00:00",
+      "usage_count": 0
+    },
+    {
+      "question": "Are you available for an immediate interview?",
+      "answer": "Yes",
+      "type": "radio",
+      "timestamp": "2026-04-21T16:00:00",
+      "usage_count": 0
+    },
+    {
+      "question": "Preferred work location",
+      "answer": "Hybrid",
+      "type": "select",
+      "timestamp": "2026-04-21T16:00:00",
+      "usage_count": 0
+    }
+  ],
+  "metadata": {
+    "created": "2026-04-21T16:00:00",
+    "updated": "2026-04-21T16:00:00",
+    "total_learned": 0,
+    "description": "Question & Answer repository for Naukri job applications. Answers are reused for similar questions."
+  }
+}
