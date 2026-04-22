@@ -19,7 +19,7 @@ const browser = await chromium.launch();
 const page = await browser.newPage();
 // All subsequent operations use the same connection
 await page.goto('https://example.com');
-await page.click('#button');
+await page.locator('#button').click();
 ```
 
 ---
@@ -48,13 +48,13 @@ const page2 = await context2.newPage();
 // Perfect for multi-user scenarios without launching multiple browsers
 
 await page1.goto('https://app.com');
-await page1.click('#login');
-await page1.fill('#email', 'user1@test.com');
+await page1.locator('#login').click();
+await page1.locator('#email').fill('user1@test.com');
 
 // Meanwhile, page2 runs independently
 await page2.goto('https://app.com');
-await page2.click('#login');
-await page2.fill('#email', 'user2@test.com');
+await page2.locator('#login').click();
+await page2.locator('#email').fill('user2@test.com');
 ```
 
 ---
@@ -73,19 +73,19 @@ Auto-waiting is Playwright's built-in synchronization that ensures elements are 
 **Technical Details:**
 ```javascript
 // Without explicit waits - Playwright auto-waits up to 30 seconds
-await page.click('#submit-button');
+await page.locator('#submit-button').click();
 // Internally: checks visibility, stability, enables, then clicks
 
 // Auto-waiting applies to all actions:
-await page.fill('#email', 'test@test.com'); // Waits for input to be visible and enabled
-await page.selectOption('#dropdown', 'option1'); // Waits for select to be ready
-await page.check('#checkbox'); // Waits for checkbox to be actionable
+await page.locator('#email').fill('test@test.com'); // Waits for input to be visible and enabled
+await page.locator('#dropdown').selectOption('option1'); // Waits for select to be ready
+await page.locator('#checkbox').check(); // Waits for checkbox to be actionable
 
 // Custom timeout for auto-wait
-await page.click('#slow-button', { timeout: 60000 }); // 60 second custom timeout
+await page.locator('#slow-button').click({ timeout: 60000 }); // 60 second custom timeout
 
 // Disable auto-wait (not recommended)
-await page.click('#element', { force: true }); // Bypasses auto-waiting
+await page.locator('#element').click({ force: true }); // Bypasses auto-waiting
 ```
 
 **Why This Matters:**
@@ -115,13 +115,13 @@ const data = await response.json();
 // Wait for navigation without explicit URL
 await Promise.all([
   page.waitForNavigation(),
-  page.click('#submit-button')
+  page.locator('#submit-button').click()
 ]);
 
 // Combining waits for complex scenarios
 await Promise.all([
   page.waitForLoadState('networkidle'),
-  page.click('#load-more-button')
+  page.locator('#load-more-button').click()
 ]);
 
 // Wait for DOM changes after AJAX
@@ -155,9 +155,9 @@ exports.test = base.test.extend({
   authenticatedPage: async ({ page }, use) => {
     // Setup: Login before each test
     await page.goto('https://app.com/login');
-    await page.fill('#email', 'user@test.com');
-    await page.fill('#password', 'secure-password');
-    await page.click('#login-btn');
+    await page.locator('#email').fill('user@test.com');
+    await page.locator('#password').fill('secure-password');
+    await page.locator('#login-btn').click();
     await page.waitForNavigation();
     
     // Make page available to test
@@ -204,8 +204,8 @@ test('user dashboard loads with authenticated session', async ({ authenticatedPa
 });
 
 test('create user with pre-loaded data', async ({ authenticatedPage, userData }) => {
-  await authenticatedPage.click('[data-testid="new-user"]');
-  await authenticatedPage.fill('#user-email', userData.email);
+  await authenticatedPage.locator('[data-testid="new-user"]').click();
+  await authenticatedPage.locator('#user-email').fill(userData.email);
   await expect(authenticatedPage.locator('#confirmation')).toBeVisible();
 });
 
@@ -553,7 +553,7 @@ const config = {
 test('click specific button with strict mode', async ({ page }) => {
   await page.goto('https://example.com');
   
-  // ❌ Would fail with strict mode error
+// ❌ Would fail with strict mode error
   // await page.locator('button').click();
   
   // ✅ SOLUTIONS:
@@ -586,7 +586,7 @@ await button.click();
 await button.click(); // Works - re-queries DOM each time
 
 // ELEMENT HANDLES (Legacy - Stores reference to specific element)
-const elementHandle = await page.$('#submit-btn');
+const elementHandle = await page.locator('#submit-btn').elementHandle();
 await elementHandle.click(); // Reference-based
 
 // KEY DIFFERENCES:
@@ -608,7 +608,7 @@ const testComparison = async ({ page }) => {
   await locatorBtn.click();
   
   // ELEMENT HANDLES: Reference becomes stale
-  const handleBtn = await page.$('#stale-button');
+  const handleBtn = await page.locator('#stale-button').elementHandle();
   
   // Remove and recreate element
   await page.evaluate(() => {
@@ -644,7 +644,7 @@ test('multiple operations with locator', async ({ page }) => {
 // SCENARIO 3: When you need raw element (Use ElementHandle)
 test('element handle for direct DOM access', async ({ page }) => {
   // Get element handle for advanced DOM manipulation
-  const button = await page.$('[data-testid="submit"]');
+  const button = await page.locator('[data-testid="submit"]').elementHandle();
   
   // Direct JavaScript execution on element
   await button.evaluate(el => {
@@ -670,7 +670,7 @@ class PageObject {
   
   // Use element handles only for advanced DOM manipulation
   async getButtonElement() {
-    return this.page.$('[data-testid="submit"]');
+    return this.page.locator('[data-testid="submit"]').elementHandle();
   }
   
   async submitForm(data) {
@@ -679,7 +679,7 @@ class PageObject {
     await this.page.locator('#password').fill(data.password);
     
     // Use element handle for complex DOM operations
-    const form = await this.page.$('form');
+    const form = await this.page.locator('form').elementHandle();
     const formData = await form.evaluate(el => {
       return new FormData(el);
     });
@@ -713,7 +713,7 @@ Playwright eliminates the need for these traditional waits through auto-waiting,
 // EXPLICIT WAIT (Playwright equivalent)
 // Wait for specific condition to be true
 const waitForElementVisible = async (page, selector) => {
-  await page.waitForSelector(selector, { state: 'visible', timeout: 5000 });
+  await page.locator(selector).waitFor({ state: 'visible', timeout: 5000 });
 };
 
 // FLUENT WAIT (Polling at intervals)
@@ -744,7 +744,7 @@ test('playwright auto-waiting - best approach', async ({ page }) => {
   // No manual waits needed - Playwright handles it
   
   // 1. Action auto-wait (waits for element actionability)
-  await page.click('#button'); // Waits up to 30 seconds by default
+  await page.locator('#button').click(); // Waits up to 30 seconds by default
   
   // 2. Assertion auto-wait (retries assertion)
   await expect(page.locator('#message')).toBeVisible(); // Retries until visible or timeout
@@ -862,7 +862,7 @@ test('custom timeout configuration', async ({ page }) => {
   page.setDefaultNavigationTimeout(30000); // 30 seconds for navigation
   
   // Override for specific action
-  await page.click('#element', { timeout: 60000 }); // 60 seconds for this click
+  await page.locator('#element').click({ timeout: 60000 }); // 60 seconds for this click
   
   // Override for assertions
   await expect(page.locator('#element')).toBeVisible({
@@ -893,7 +893,7 @@ test('comprehensive network waiting strategies', async ({ page }) => {
     resp => resp.url().includes('/api/users') && resp.status() === 200
   );
   
-  await page.click('#load-users-btn');
+  await page.locator('#load-users-btn').click();
   const response = await responsePromise;
   const data = await response.json();
   console.log('Users data:', data);
@@ -913,7 +913,7 @@ test('comprehensive network waiting strategies', async ({ page }) => {
   const [, response] = await Promise.all([
     page.waitForNavigation(),
     page.waitForResponse(resp => resp.status() === 200),
-    page.click('#submit-btn')
+    page.locator('#submit-btn').click()
   ]);
   
   // STRATEGY 5: Wait for failed responses (error handling)
@@ -1577,21 +1577,21 @@ test('e-commerce checkout with full network mocking', async ({ page }) => {
     await expect(page.locator('text=Product 1')).toBeVisible();
     
     // Add to cart
-    await page.click('[data-testid="add-product-1"]');
+    await page.locator('[data-testid="add-product-1"]').click();
     await expect(page.locator('[data-testid="cart-count"]')).toContainText('1');
     
     // Go to checkout
-    await page.click('[data-testid="checkout-btn"]');
+    await page.locator('[data-testid="checkout-btn"]').click();
     
     // Verify login called
     await expect(page).toHaveURL('**/checkout');
     expect(mocker.wasEndpointCalled('/api/products')).toBe(true);
     
     // Fill payment details
-    await page.fill('[data-testid="card-number"]', '4242 4242 4242 4242');
+    await page.locator('[data-testid="card-number"]').fill('4242 4242 4242 4242');
     
     // Process payment
-    await page.click('[data-testid="pay-btn"]');
+    await page.locator('[data-testid="pay-btn"]').click();
     
     // Verify order confirmation
     await expect(page.locator('text=ORD-123456')).toBeVisible();
@@ -1612,7 +1612,7 @@ test('handle payment failure gracefully', async ({ page }) => {
   await mocker.mockError('**/api/payment/process', 402); // Payment required
   
   await page.goto('https://shop.example.com/checkout');
-  await page.click('[data-testid="pay-btn"]');
+  await page.locator('[data-testid="pay-btn"]').click();
   
   // Verify error message displayed
   await expect(page.locator('[data-testid="error-message"]')).toContainText(
@@ -1672,8 +1672,8 @@ test('websocket real-time updates', async ({ page }) => {
   await page.goto('https://example.com/chat');
   
   // Trigger WebSocket message
-  await page.fill('[data-testid="message-input"]', 'Hello');
-  await page.click('[data-testid="send-btn"]');
+  await page.locator('[data-testid="message-input"]').fill('Hello');
+  await page.locator('[data-testid="send-btn"]').click();
   
   // Wait for server response
   await page.waitForFunction(() => {
@@ -1900,13 +1900,13 @@ test('handle rapid websocket messages', async ({ page }) => {
   await page.goto('https://example.com/high-frequency');
   
   // Trigger rapid data updates
-  await page.click('[data-testid="start-streaming"]');
+  await page.locator('[data-testid="start-streaming"]').click();
   
   // Wait for many messages
   await page.waitForTimeout(5000);
   
   // Stop streaming
-  await page.click('[data-testid="stop-streaming"]');
+  await page.locator('[data-testid="stop-streaming"]').click();
   
   // Verify message counts
   console.log('Message counters:', messageCounters);
