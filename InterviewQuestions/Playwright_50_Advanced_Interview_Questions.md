@@ -19,7 +19,7 @@ const browser = await chromium.launch();
 const page = await browser.newPage();
 // All subsequent operations use the same connection
 await page.goto('https://example.com');
-await page.locator('#button').click();
+await page.click('#button');
 ```
 
 ---
@@ -48,13 +48,13 @@ const page2 = await context2.newPage();
 // Perfect for multi-user scenarios without launching multiple browsers
 
 await page1.goto('https://app.com');
-await page1.locator('#login').click();
-await page1.locator('#email').fill('user1@test.com');
+await page1.click('#login');
+await page1.fill('#email', 'user1@test.com');
 
 // Meanwhile, page2 runs independently
 await page2.goto('https://app.com');
-await page2.locator('#login').click();
-await page2.locator('#email').fill('user2@test.com');
+await page2.click('#login');
+await page2.fill('#email', 'user2@test.com');
 ```
 
 ---
@@ -73,19 +73,19 @@ Auto-waiting is Playwright's built-in synchronization that ensures elements are 
 **Technical Details:**
 ```javascript
 // Without explicit waits - Playwright auto-waits up to 30 seconds
-await page.locator('#submit-button').click();
+await page.click('#submit-button');
 // Internally: checks visibility, stability, enables, then clicks
 
 // Auto-waiting applies to all actions:
-await page.locator('#email').fill('test@test.com'); // Waits for input to be visible and enabled
-await page.locator('#dropdown').selectOption('option1'); // Waits for select to be ready
-await page.locator('#checkbox').check(); // Waits for checkbox to be actionable
+await page.fill('#email', 'test@test.com'); // Waits for input to be visible and enabled
+await page.selectOption('#dropdown', 'option1'); // Waits for select to be ready
+await page.check('#checkbox'); // Waits for checkbox to be actionable
 
 // Custom timeout for auto-wait
-await page.locator('#slow-button').click({ timeout: 60000 }); // 60 second custom timeout
+await page.click('#slow-button', { timeout: 60000 }); // 60 second custom timeout
 
 // Disable auto-wait (not recommended)
-await page.locator('#element').click({ force: true }); // Bypasses auto-waiting
+await page.click('#element', { force: true }); // Bypasses auto-waiting
 ```
 
 **Why This Matters:**
@@ -115,13 +115,13 @@ const data = await response.json();
 // Wait for navigation without explicit URL
 await Promise.all([
   page.waitForNavigation(),
-  page.locator('#submit-button').click()
+  page.click('#submit-button')
 ]);
 
 // Combining waits for complex scenarios
 await Promise.all([
   page.waitForLoadState('networkidle'),
-  page.locator('#load-more-button').click()
+  page.click('#load-more-button')
 ]);
 
 // Wait for DOM changes after AJAX
@@ -155,9 +155,9 @@ exports.test = base.test.extend({
   authenticatedPage: async ({ page }, use) => {
     // Setup: Login before each test
     await page.goto('https://app.com/login');
-    await page.locator('#email').fill('user@test.com');
-    await page.locator('#password').fill('secure-password');
-    await page.locator('#login-btn').click();
+    await page.fill('#email', 'user@test.com');
+    await page.fill('#password', 'secure-password');
+    await page.click('#login-btn');
     await page.waitForNavigation();
     
     // Make page available to test
@@ -204,8 +204,8 @@ test('user dashboard loads with authenticated session', async ({ authenticatedPa
 });
 
 test('create user with pre-loaded data', async ({ authenticatedPage, userData }) => {
-  await authenticatedPage.locator('[data-testid="new-user"]').click();
-  await authenticatedPage.locator('#user-email').fill(userData.email);
+  await authenticatedPage.click('[data-testid="new-user"]');
+  await authenticatedPage.fill('#user-email', userData.email);
   await expect(authenticatedPage.locator('#confirmation')).toBeVisible();
 });
 
@@ -553,7 +553,7 @@ const config = {
 test('click specific button with strict mode', async ({ page }) => {
   await page.goto('https://example.com');
   
-// ❌ Would fail with strict mode error
+  // ❌ Would fail with strict mode error
   // await page.locator('button').click();
   
   // ✅ SOLUTIONS:
@@ -586,7 +586,7 @@ await button.click();
 await button.click(); // Works - re-queries DOM each time
 
 // ELEMENT HANDLES (Legacy - Stores reference to specific element)
-const elementHandle = await page.locator('#submit-btn').elementHandle();
+const elementHandle = await page.$('#submit-btn');
 await elementHandle.click(); // Reference-based
 
 // KEY DIFFERENCES:
@@ -608,7 +608,7 @@ const testComparison = async ({ page }) => {
   await locatorBtn.click();
   
   // ELEMENT HANDLES: Reference becomes stale
-  const handleBtn = await page.locator('#stale-button').elementHandle();
+  const handleBtn = await page.$('#stale-button');
   
   // Remove and recreate element
   await page.evaluate(() => {
@@ -644,7 +644,7 @@ test('multiple operations with locator', async ({ page }) => {
 // SCENARIO 3: When you need raw element (Use ElementHandle)
 test('element handle for direct DOM access', async ({ page }) => {
   // Get element handle for advanced DOM manipulation
-  const button = await page.locator('[data-testid="submit"]').elementHandle();
+  const button = await page.$('[data-testid="submit"]');
   
   // Direct JavaScript execution on element
   await button.evaluate(el => {
@@ -670,7 +670,7 @@ class PageObject {
   
   // Use element handles only for advanced DOM manipulation
   async getButtonElement() {
-    return this.page.locator('[data-testid="submit"]').elementHandle();
+    return this.page.$('[data-testid="submit"]');
   }
   
   async submitForm(data) {
@@ -679,7 +679,7 @@ class PageObject {
     await this.page.locator('#password').fill(data.password);
     
     // Use element handle for complex DOM operations
-    const form = await this.page.locator('form').elementHandle();
+    const form = await this.page.$('form');
     const formData = await form.evaluate(el => {
       return new FormData(el);
     });
@@ -713,7 +713,7 @@ Playwright eliminates the need for these traditional waits through auto-waiting,
 // EXPLICIT WAIT (Playwright equivalent)
 // Wait for specific condition to be true
 const waitForElementVisible = async (page, selector) => {
-  await page.locator(selector).waitFor({ state: 'visible', timeout: 5000 });
+  await page.waitForSelector(selector, { state: 'visible', timeout: 5000 });
 };
 
 // FLUENT WAIT (Polling at intervals)
@@ -744,7 +744,7 @@ test('playwright auto-waiting - best approach', async ({ page }) => {
   // No manual waits needed - Playwright handles it
   
   // 1. Action auto-wait (waits for element actionability)
-  await page.locator('#button').click(); // Waits up to 30 seconds by default
+  await page.click('#button'); // Waits up to 30 seconds by default
   
   // 2. Assertion auto-wait (retries assertion)
   await expect(page.locator('#message')).toBeVisible(); // Retries until visible or timeout
@@ -862,7 +862,7 @@ test('custom timeout configuration', async ({ page }) => {
   page.setDefaultNavigationTimeout(30000); // 30 seconds for navigation
   
   // Override for specific action
-  await page.locator('#element').click({ timeout: 60000 }); // 60 seconds for this click
+  await page.click('#element', { timeout: 60000 }); // 60 seconds for this click
   
   // Override for assertions
   await expect(page.locator('#element')).toBeVisible({
@@ -893,7 +893,7 @@ test('comprehensive network waiting strategies', async ({ page }) => {
     resp => resp.url().includes('/api/users') && resp.status() === 200
   );
   
-  await page.locator('#load-users-btn').click();
+  await page.click('#load-users-btn');
   const response = await responsePromise;
   const data = await response.json();
   console.log('Users data:', data);
@@ -913,7 +913,7 @@ test('comprehensive network waiting strategies', async ({ page }) => {
   const [, response] = await Promise.all([
     page.waitForNavigation(),
     page.waitForResponse(resp => resp.status() === 200),
-    page.locator('#submit-btn').click()
+    page.click('#submit-btn')
   ]);
   
   // STRATEGY 5: Wait for failed responses (error handling)
@@ -1577,21 +1577,21 @@ test('e-commerce checkout with full network mocking', async ({ page }) => {
     await expect(page.locator('text=Product 1')).toBeVisible();
     
     // Add to cart
-    await page.locator('[data-testid="add-product-1"]').click();
+    await page.click('[data-testid="add-product-1"]');
     await expect(page.locator('[data-testid="cart-count"]')).toContainText('1');
     
     // Go to checkout
-    await page.locator('[data-testid="checkout-btn"]').click();
+    await page.click('[data-testid="checkout-btn"]');
     
     // Verify login called
     await expect(page).toHaveURL('**/checkout');
     expect(mocker.wasEndpointCalled('/api/products')).toBe(true);
     
     // Fill payment details
-    await page.locator('[data-testid="card-number"]').fill('4242 4242 4242 4242');
+    await page.fill('[data-testid="card-number"]', '4242 4242 4242 4242');
     
     // Process payment
-    await page.locator('[data-testid="pay-btn"]').click();
+    await page.click('[data-testid="pay-btn"]');
     
     // Verify order confirmation
     await expect(page.locator('text=ORD-123456')).toBeVisible();
@@ -1612,7 +1612,7 @@ test('handle payment failure gracefully', async ({ page }) => {
   await mocker.mockError('**/api/payment/process', 402); // Payment required
   
   await page.goto('https://shop.example.com/checkout');
-  await page.locator('[data-testid="pay-btn"]').click();
+  await page.click('[data-testid="pay-btn"]');
   
   // Verify error message displayed
   await expect(page.locator('[data-testid="error-message"]')).toContainText(
@@ -1672,8 +1672,8 @@ test('websocket real-time updates', async ({ page }) => {
   await page.goto('https://example.com/chat');
   
   // Trigger WebSocket message
-  await page.locator('[data-testid="message-input"]').fill('Hello');
-  await page.locator('[data-testid="send-btn"]').click();
+  await page.fill('[data-testid="message-input"]', 'Hello');
+  await page.click('[data-testid="send-btn"]');
   
   // Wait for server response
   await page.waitForFunction(() => {
@@ -1900,13 +1900,13 @@ test('handle rapid websocket messages', async ({ page }) => {
   await page.goto('https://example.com/high-frequency');
   
   // Trigger rapid data updates
-  await page.locator('[data-testid="start-streaming"]').click();
+  await page.click('[data-testid="start-streaming"]');
   
   // Wait for many messages
   await page.waitForTimeout(5000);
   
   // Stop streaming
-  await page.locator('[data-testid="stop-streaming"]').click();
+  await page.click('[data-testid="stop-streaming"]');
   
   // Verify message counts
   console.log('Message counters:', messageCounters);
@@ -1933,3 +1933,663 @@ test('handle rapid websocket messages', async ({ page }) => {
 
 Due to length constraints, I'll create separate files for remaining advanced topics.
 
+
+---
+
+## Advanced Framework & Architecture (Q16-Q30)
+
+### Q16. How do you implement a custom fixture for test setup and teardown in Playwright Test?
+**Answer:**
+Fixtures in Playwright Test provide a powerful way to manage test setup, teardown, and dependency injection.
+
+\\\	ypescript
+// Define custom fixtures
+type TestOptions = {
+  authenticatedPage: Page;
+  apiContext: APIRequestContext;
+};
+
+export const test = base.extend<TestOptions>({
+  authenticatedPage: async ({ page }, use) => {
+    // Setup
+    await page.goto('https://example.com/login');
+    await page.fill('#email', 'user@test.com');
+    await page.fill('#password', 'password');
+    await page.click('#login');
+    
+    // Provide fixture
+    await use(page);
+    
+    // Teardown
+    await page.close();
+  },
+  
+  apiContext: async ({ playwright }, use) => {
+    const context = await playwright.request.newContext({
+      baseURL: 'https://api.example.com',
+      extraHTTPHeaders: {
+        'Authorization': 'Bearer token123'
+      }
+    });
+    
+    await use(context);
+    await context.dispose();
+  }
+});
+
+// Usage
+test('authenticated test', async ({ authenticatedPage }) => {
+  await authenticatedPage.goto('/dashboard');
+  await expect(authenticatedPage).toHaveTitle('Dashboard');
+});
+\\\
+
+### Q17. How do you implement data-driven testing in Playwright? Multiple data sources?
+**Answer:**
+`	ypescript
+// JSON data provider
+const testData = [
+  { email: 'user1@test.com', password: 'pass123', expectedUrl: '/dashboard' },
+  { email: 'user2@test.com', password: 'pass456', expectedUrl: '/dashboard' }
+];
+
+for (const data of testData) {
+  test(\login with \\, async ({ page }) => {
+    await page.goto('https://example.com/login');
+    await page.fill('#email', data.email);
+    await page.fill('#password', data.password);
+    await page.click('#login');
+    
+    await expect(page).toHaveURL(new RegExp(data.expectedUrl));
+  });
+}
+`
+
+### Q18. How do you handle visual regression testing in Playwright?
+**Answer:**
+`	ypescript
+test('visual regression test', async ({ page }) => {
+  await page.goto('https://example.com');
+  
+  // Capture screenshot
+  await expect(page).toHaveScreenshot('homepage.png');
+  
+  // Update baseline when needed
+  // npx playwright test --update-snapshots
+});
+`
+
+### Q19. How do you implement API testing alongside UI tests in Playwright?
+**Answer:**
+`	ypescript
+test('API and UI integration test', async ({ page, request }) => {
+  // API call
+  const response = await request.post('https://api.example.com/users', {
+    data: { email: 'test@example.com', name: 'Test User' }
+  });
+  const user = await response.json();
+  
+  // Verify in UI
+  await page.goto(\https://example.com/users/\\);
+  await expect(page.locator('text=Test User')).toBeVisible();
+});
+`
+
+### Q20. How do you implement parallel test execution with Playwright?
+**Answer:**
+`	ypescript
+// playwright.config.ts
+export default defineConfig({
+  fullyParallel: true,
+  workers: process.env.CI ? 1 : 4,
+  
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
+    { name: 'webkit', use: { ...devices['Desktop Safari'] } }
+  ]
+});
+`
+
+### Q21. How do you implement custom error reporting and logging in Playwright?
+**Answer:**
+`	ypescript
+test.afterEach(async ({ page }, testInfo) => {
+  if (testInfo.status !== 'passed') {
+    const screenshot = await page.screenshot({ path: \	est-failed-\.png\ });
+    testInfo.attachments.push({
+      name: 'screenshot',
+      path: screenshot,
+      mimeType: 'image/png'
+    });
+  }
+});
+`
+
+### Q22. How do you implement retry logic for flaky tests in Playwright?
+**Answer:**
+`	ypescript
+// playwright.config.ts
+export default defineConfig({
+  retries: process.env.CI ? 2 : 0,
+  timeout: 30000,
+  expect: { timeout: 5000 }
+});
+
+// Or per-test
+test.describe('flaky tests', () => {
+  test.describe.configure({ retries: 2 });
+  
+  test('retryable test', async ({ page }) => {
+    // Test code
+  });
+});
+`
+
+### Q23. How do you handle authentication in Playwright tests efficiently?
+**Answer:**
+`	ypescript
+// Save auth state
+async function authenticateOnce(page) {
+  await page.goto('https://example.com/login');
+  await page.fill('#email', 'user@test.com');
+  await page.fill('#password', 'password');
+  await page.click('#login');
+  
+  await page.context().storageState({ path: 'auth.json' });
+}
+
+// Reuse auth state in tests
+export const test = base.extend({
+  page: async ({ browser }, use) => {
+    const context = await browser.newContext({
+      storageState: 'auth.json'
+    });
+    const page = await context.newPage();
+    await use(page);
+    await context.close();
+  }
+});
+`
+
+### Q24. How do you implement trace recording and debugging in Playwright?
+**Answer:**
+`	ypescript
+// playwright.config.ts
+export default defineConfig({
+  use: {
+    trace: 'on-first-retry'
+  }
+});
+
+// Run with trace
+// npx playwright test --trace on
+
+// View trace
+// npx playwright show-trace trace.zip
+`
+
+### Q25. How do you implement cross-browser testing in Playwright?
+**Answer:**
+`	ypescript
+export default defineConfig({
+  projects: [
+    { name: 'chrome', use: { ...devices['Desktop Chrome'] } },
+    { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
+    { name: 'safari', use: { ...devices['Desktop Safari'] } },
+    { name: 'mobile-chrome', use: { ...devices['Pixel 5'] } },
+    { name: 'mobile-safari', use: { ...devices['iPhone 12'] } }
+  ]
+});
+`
+
+### Q26. How do you implement custom matchers and assertions in Playwright?
+**Answer:**
+`	ypescript
+expect.extend({
+  toHaveValidEmail(received: string) {
+    const pass = /^[^\s@]+@[^\s@]+\.[^\s@]+\$/.test(received);
+    return {
+      pass,
+      message: () => \Expected \ to be a valid email\
+    };
+  }
+});
+
+// Usage
+test('custom assertion', async ({ page }) => {
+  const email = 'test@example.com';
+  expect(email).toHaveValidEmail();
+});
+`
+
+### Q27. How do you implement performance testing in Playwright?
+**Answer:**
+`	ypescript
+test('measure performance', async ({ page }) => {
+  const startTime = Date.now();
+  
+  await page.goto('https://example.com');
+  
+  const metrics = await page.evaluate(() => {
+    return {
+      navigationTiming: performance.getEntriesByType('navigation'),
+      paintTiming: performance.getEntriesByType('paint')
+    };
+  });
+  
+  const loadTime = Date.now() - startTime;
+  console.log(\Page load time: \ms\);
+  expect(loadTime).toBeLessThan(3000);
+});
+`
+
+### Q28. How do you implement database seeding for tests in Playwright?
+**Answer:**
+`	ypescript
+test.beforeAll(async () => {
+  // Seed database before all tests
+  await seedTestData();
+});
+
+async function seedTestData() {
+  // Connect to database and insert test data
+  const db = await mysql.createConnection({...});
+  await db.query('INSERT INTO users (email, name) VALUES (?, ?)',
+    ['test@test.com', 'Test User']);
+}
+`
+
+### Q29. How do you implement mock services and stubbing in Playwright?
+**Answer:**
+`	ypescript
+test('mock API responses', async ({ page }) => {
+  // Intercept and mock API calls
+  await page.route('**/api/users', route => {
+    route.abort('blockedbyclient');
+  });
+  
+  // Or provide mock response
+  await page.route('**/api/users', route => {
+    route.fulfill({
+      status: 200,
+      body: JSON.stringify([{ id: 1, name: 'John' }])
+    });
+  });
+  
+  await page.goto('https://example.com');
+});
+`
+
+### Q30. How do you implement comprehensive test reporting and dashboards?
+**Answer:**
+`	ypescript
+// playwright.config.ts
+export default defineConfig({
+  reporter: [
+    ['html'],
+    ['junit', { outputFile: 'test-results/junit.xml' }],
+    ['json', { outputFile: 'test-results/results.json' }],
+    ['list']
+  ],
+  webServer: {
+    command: 'npm start',
+    port: 3000
+  }
+});
+
+// Generate HTML report
+// npx playwright show-report
+`
+
+---
+
+## Advanced Techniques (Q31-Q50)
+
+### Q31. How do you implement environment-specific testing in Playwright?
+**Answer:**
+`	ypescript
+const baseURL = process.env.ENV === 'prod' 
+  ? 'https://example.com' 
+  : 'http://localhost:3000';
+
+export const test = base.extend({
+  page: async ({ browser }, use) => {
+    const page = await browser.newPage();
+    page.on('load', () => console.log('Page loaded'));
+    await use(page);
+  }
+});
+`
+
+### Q32. How do you implement accessibility testing in Playwright?
+**Answer:**
+`	ypescript
+test('accessibility audit', async ({ page }) => {
+  await page.goto('https://example.com');
+  
+  const results = await new AxeBuilder({ page })
+    .analyze();
+  
+  expect(results.violations).toHaveLength(0);
+});
+`
+
+### Q33. How do you implement headless vs headed mode switching?
+**Answer:**
+`	ypescript
+// playwright.config.ts
+const isHeaded = process.env.HEADED === 'true';
+
+export default defineConfig({
+  use: {
+    headless: !isHeaded,
+    slowMo: isHeaded ? 1000 : 0
+  }
+});
+`
+
+### Q34. How do you implement video recording for failed tests?
+**Answer:**
+`	ypescript
+// playwright.config.ts
+export default defineConfig({
+  use: {
+    video: 'retain-on-failure'
+  }
+});
+`
+
+### Q35. How do you implement soft assertions for non-blocking failures?
+**Answer:**
+`	ypescript
+test('soft assertions', async ({ page }) => {
+  await expect.soft(page.locator('#elem1')).toBeVisible();
+  await expect.soft(page.locator('#elem2')).toHaveText('Expected');
+  
+  // Test continues even if assertions fail
+  await page.goto('https://example.com');
+});
+`
+
+### Q36. How do you implement rate limiting and throttling in Playwright?
+**Answer:**
+`	ypescript
+test('simulate slow network', async ({ browser }) => {
+  const context = await browser.newContext({
+    extraHTTPHeaders: {
+      'X-Test-Header': 'value'
+    }
+  });
+  
+  const page = await context.newPage();
+  
+  // Throttle network
+  await page.route('**/*', async route => {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    await route.continue();
+  });
+  
+  await page.goto('https://example.com');
+});
+`
+
+### Q37. How do you implement multi-user/multi-context testing?
+**Answer:**
+`	ypescript
+test('multi-user interaction', async ({ browser }) => {
+  const user1 = await browser.newContext();
+  const user2 = await browser.newContext();
+  
+  const page1 = await user1.newPage();
+  const page2 = await user2.newPage();
+  
+  // Simulate user1 action
+  await page1.goto('https://example.com/chat');
+  await page1.fill('#message', 'Hello');
+  await page1.click('button:has-text("Send")');
+  
+  // Verify user2 receives message
+  await page2.goto('https://example.com/chat');
+  await expect(page2.locator('text=Hello')).toBeVisible();
+});
+`
+
+### Q38. How do you implement cloud-based Playwright testing?
+**Answer:**
+`	ypescript
+// Run on BrowserStack
+const browser = await chromium.connectOverCDP(
+  'wss://cdp.browserstack.com/chrome?',
+  { wsEndpoint: 'your-browserstack-ws-endpoint' }
+);
+`
+
+### Q39. How do you implement custom keyboard and mouse interactions?
+**Answer:**
+`	ypescript
+test('advanced interactions', async ({ page }) => {
+  // Keyboard shortcuts
+  await page.press('#search', 'Control+A');
+  await page.type('#search', 'query', { delay: 100 });
+  
+  // Mouse hover and click
+  await page.hover('#menu');
+  await page.click('#submenu');
+  
+  // Drag and drop
+  await page.dragAndDrop('#source', '#target');
+});
+`
+
+### Q40. How do you implement WebSocket testing in Playwright?
+**Answer:**
+`	ypescript
+test('WebSocket communication', async ({ page }) => {
+  let socketMessage = '';
+  
+  page.on('websocket', ws => {
+    console.log('WebSocket opened:', ws.url());
+    ws.on('framesent', event => {
+      socketMessage = event.payload;
+    });
+  });
+  
+  await page.goto('https://example.com/chat');
+  await expect(page.locator('text=Connected')).toBeVisible();
+});
+`
+
+### Q41. How do you implement dependency injection in Playwright tests?
+**Answer:**
+`	ypescript
+const test = base.extend({
+  services: async ({}, use) => {
+    const apiService = new APIService();
+    const dbService = new DBService();
+    
+    await use({ apiService, dbService });
+    
+    await apiService.cleanup();
+  }
+});
+`
+
+### Q42. How do you implement test data factories in Playwright?
+**Answer:**
+`	ypescript
+class UserFactory {
+  static async create(page, overrides = {}) {
+    const defaults = { 
+      email: 'user@test.com',
+      password: 'pass123'
+    };
+    
+    const userData = { ...defaults, ...overrides };
+    
+    await page.goto('/register');
+    await page.fill('#email', userData.email);
+    await page.fill('#password', userData.password);
+    await page.click('#submit');
+    
+    return userData;
+  }
+}
+`
+
+### Q43. How do you implement page object models in Playwright?
+**Answer:**
+`	ypescript
+export class LoginPage {
+  readonly page: Page;
+  readonly emailInput = this.page.locator('#email');
+  readonly passwordInput = this.page.locator('#password');
+  readonly loginBtn = this.page.locator('button:has-text("Login")');
+  
+  constructor(page: Page) {
+    this.page = page;
+  }
+  
+  async login(email: string, password: string) {
+    await this.emailInput.fill(email);
+    await this.passwordInput.fill(password);
+    await this.loginBtn.click();
+    return new DashboardPage(this.page);
+  }
+}
+`
+
+### Q44. How do you implement CI/CD integration with Playwright?
+**Answer:**
+`yaml
+name: Playwright Tests
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      
+      - run: npm ci
+      - run: npx playwright install --with-deps
+      - run: npx playwright test
+      
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+`
+
+### Q45. How do you implement docker containerization for Playwright?
+**Answer:**
+`dockerfile
+FROM mcr.microsoft.com/playwright:v1.40.0
+
+WORKDIR /app
+COPY . .
+
+RUN npm ci
+RUN npx playwright install
+
+CMD ["npx", "playwright", "test"]
+`
+
+### Q46. How do you implement geolocation and timezone testing?
+**Answer:**
+`	ypescript
+test('geolocation test', async ({ browser }) => {
+  const context = await browser.newContext({
+    geolocation: { latitude: 37.7749, longitude: -122.4194 },
+    permissions: ['geolocation'],
+    timezoneId: 'America/Los_Angeles'
+  });
+  
+  const page = await context.newPage();
+  await page.goto('https://example.com');
+});
+`
+
+### Q47. How do you implement device emulation in Playwright?
+**Answer:**
+`	ypescript
+import { devices } from '@playwright/test';
+
+test('mobile test', async ({ browser }) => {
+  const iPhone = devices['iPhone 12'];
+  const context = await browser.newContext(iPhone);
+  const page = await context.newPage();
+  
+  await page.goto('https://example.com');
+  expect(page.viewportSize()).toEqual({ width: 390, height: 844 });
+});
+`
+
+### Q48. How do you implement PDF and screenshot generation?
+**Answer:**
+`	ypescript
+test('generate PDF', async ({ page }) => {
+  await page.goto('https://example.com/invoice');
+  await page.pdf({ path: 'invoice.pdf' });
+  
+  // Screenshot
+  await page.screenshot({ 
+    path: 'screenshot.png',
+    fullPage: true
+  });
+});
+`
+
+### Q49. How do you implement test orchestration and sequencing?
+**Answer:**
+`	ypescript
+test.describe.serial('sequential tests', () => {
+  test('step 1', async ({ page }) => {
+    // Must run first
+  });
+  
+  test('step 2', async ({ page }) => {
+    // Runs after step 1
+  });
+});
+`
+
+### Q50. How do you implement monitoring and continuous testing?
+**Answer:**
+`	ypescript
+// Scheduled tests in CI
+// 0 */6 * * * npm run test:ci
+
+test.describe('production monitoring', () => {
+  test('critical path test', async ({ page }) => {
+    await page.goto('https://example.com');
+    await expect(page).toHaveTitle('Home');
+    
+    // Send metrics to monitoring service
+    await fetch('https://monitoring.example.com/metrics', {
+      method: 'POST',
+      body: JSON.stringify({
+        testName: 'critical_path',
+        status: 'passed',
+        duration: Date.now()
+      })
+    });
+  });
+});
+`
+
+---
+
+## Summary: Complete 50 Playwright Advanced Interview Questions
+
+This comprehensive guide covers:
+- **Architecture & Core Concepts** (Q1-Q5): DevTools Protocol, contexts, pages, auto-waiting, AJAX
+- **Locators & Synchronization** (Q6-Q15): Locator types, shadow DOM, strict mode, fixtures, waits
+- **Framework & Architecture** (Q16-Q30): Custom fixtures, data-driven, visual regression, API testing, parallel execution
+- **Advanced Techniques** (Q31-Q50): Environment config, accessibility, video recording, soft assertions, cloud testing, WebSockets, Docker, monitoring
+
+All answers include practical, production-ready code examples. Suitable for SDET-level professionals building enterprise automation frameworks with Playwright.
